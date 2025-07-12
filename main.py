@@ -80,7 +80,6 @@ def fetch_server_data(query: str, cache_key: str, widget_id: int):
 
 # ------------------ API ENDPOINTS ------------------
 
-# 1. /indexstat → Widget ID: 3656538
 @app.get("/indexstat")
 def get_indexstat():
     query = """
@@ -105,28 +104,32 @@ def get_indexstat():
     """
     return fetch_server_data(query.strip(), "response_indexstat", 3656538)
 
-# 2. /all_fno_statistics → Widget ID: 3651769
 @app.get("/all_fno_statistics")
 def get_all_fno_statistics():
     query = """
-    select latest Close - 1 day ago Close / 1 day ago Close * 100 as '% Change',
+    select latest "close - 1 candle ago close / 1 candle ago close * 100" as '% Change',
            latest Close as 'Price',
-           TTM PE as 'PE',
-           latest Close - 4 weeks ago Close * 100 / 4 weeks ago Close as '4W Gain',
-           latest Min( 20 , latest Low ) as '4W low',
-           latest Max( 20 , latest Close ) as '4W high',
-           Weekly Rsi( 14 ) as 'WRsi',
-           latest Ema( latest High , 20 ) * 0.20 + latest Ema( latest High , 20 ) as 'Ai Prediction High ',
-           latest Close * 0.07 - latest Close as 'Ai Prediction Low Level 1',
-           latest Close * 0.1 - latest Close as 'Ai Prediction Low Level 2',
-           Monthly Sma( ( Monthly Open - Monthly Low / Monthly Open * 100 ) , 12 ) * 0.01 * latest Close - latest Close as 'Ai Prediction Low Level 3'
-    WHERE( {33489} ( latest max( 15 , latest rsi( 14 ) ) > 60 and latest min( 15 , latest rsi( 14 ) ) > 55 ) )
+           Monthly "close - 1 candle ago close / 1 candle ago close * 100" as 'M %',
+           Monthly Sma( Monthly "close - 1 candle ago close / 1 candle ago close * 100" * Monthly count( 1, 1 where monthly "close - 1 candle ago close / 1 candle ago close * 100" < 0 ) , 18 ) as 'Average Monthly fall by Close ',
+           Monthly Sma( ( Monthly Open - Monthly Low / Monthly Open * 100 ) , 18 ) * -1 as 'Avg Max % Down',
+           latest Close - 20 days ago Close * 100 / 20 days ago Close as '4W Gain',
+           Monthly Sma( ( Monthly High - Monthly Open / Monthly Open * 100 ) , 18 ) as 'Avg Max % Up',
+           Monthly Sma( Monthly "close - 1 candle ago close / 1 candle ago close * 100" * Monthly count( 1, 1 where monthly "close - 1 candle ago close / 1 candle ago close * 100" >= 0 ) , 18 ) as 'Average Monthly Gain by Close ',
+           latest Close - 20 days ago Close * 100 / 20 days ago Close - Monthly Sma( ( Monthly High - Monthly Open / Monthly Open * 100 ) , 12 ) as '4W Gain Delta',
+           Monthly Min( 18 , Monthly "close - 1 candle ago close / 1 candle ago close * 100" ) as '18M Max fall',
+           Monthly Max( 18 , Monthly "close - 1 candle ago close / 1 candle ago close * 100" ) as '18M Max UP',
+           latest Close - 10 days ago Close * 100 / 10 days ago Close as '2W Gain',
+           latest Close - 15 days ago Close * 100 / 15 days ago Close as '3W Gain',
+           latest Close - 30 days ago Close * 100 / 20 days ago Close as '6W Gain',
+           latest Close - 40 days ago Close * 100 / 20 days ago Close as '8W Gain',
+           Weekly Rsi( 14 ) as 'WRSI',
+           Monthly Sma( ( Monthly Open - Monthly Low / Monthly Open * 100 ) , 12 ) * 0.01 * latest Close - latest Close as 'Ai Support'
+    WHERE {33489} 1 = 1
     GROUP BY symbol
-    ORDER BY 4 desc
+    ORDER BY 6 desc
     """
-    return fetch_server_data(query.strip(), "response_allfno", 3651769)
+    return fetch_server_data(query.strip(), "response_allfno", 3654601)
 
-# 3. /consolidation15d → Widget ID: 3656567
 @app.get("/consolidation15d")
 def get_consolidation15d():
     query = """
