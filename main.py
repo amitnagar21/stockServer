@@ -15,42 +15,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Server/Chartink setup
+# Session and URLs
 session = requests.Session()
 home_url = "https://chartink.com/screener"
 widget_url = "https://chartink.com/widget/process"
 
-# In-memory cache
+# Cache for token and responses
 cache = {
     "csrf_token": {"value": None, "timestamp": 0},
-    "response_api1": {"value": None, "timestamp": 0},
-    "response_api2": {"value": None, "timestamp": 0}
+    "response_indexstat": {"value": None, "timestamp": 0},
+    "response_allfno": {"value": None, "timestamp": 0},
+    "response_consolidation15d": {"value": None, "timestamp": 0}
 }
 
-# Expiry settings
+# Expiry Settings
 TOKEN_EXPIRY = 86400      # 24 hours
 RESPONSE_EXPIRY = 300     # 5 minutes
 
-# CSRF token fetch
+# Get or refresh CSRF token
 def get_csrf_token():
     now = time.time()
     if cache["csrf_token"]["value"] and now - cache["csrf_token"]["timestamp"] < TOKEN_EXPIRY:
         return cache["csrf_token"]["value"]
+
     resp = session.get(home_url)
     soup = BeautifulSoup(resp.text, "html.parser")
     token_tag = soup.find("meta", {"name": "csrf-token"})
     token = token_tag["content"] if token_tag else None
+
     cache["csrf_token"]["value"] = token
     cache["csrf_token"]["timestamp"] = now
     return token
 
-# General server response fetcher
+# Fetch data from Chartink server
 def fetch_server_data(query: str, cache_key: str, widget_id: int):
     now = time.time()
     if cache[cache_key]["value"] and now - cache[cache_key]["timestamp"] < RESPONSE_EXPIRY:
         print(f"Using cached response for {cache_key}")
         return cache[cache_key]["value"]
-    
+
     token = get_csrf_token()
     headers = {
         "X-CSRF-TOKEN": token,
@@ -75,9 +78,11 @@ def fetch_server_data(query: str, cache_key: str, widget_id: int):
     print(f"Fetched fresh response for {cache_key}")
     return data
 
-# API 1 (widget_id: 3656538)
-@app.get("/api1")
-def get_api1():
+# ------------------ API ENDPOINTS ------------------
+
+# 1. /indexstat → Widget ID: 3656538
+@app.get("/indexstat")
+def get_indexstat():
     query = """
     select latest Close as 'Ltp',
            latest Close - latest Ema( latest Close , 200 ) as '200 EMA',
@@ -98,11 +103,11 @@ def get_api1():
     GROUP BY symbol
     ORDER BY 3 desc
     """
-    return fetch_server_data(query.strip(), "response_api1", 3656538)
+    return fetch_server_data(query.strip(), "response_indexstat", 3656538)
 
-# API 2 (widget_id: 3651769)
-@app.get("/api2")
-def get_api2():
+# 2. /all_fno_statistics → Widget ID: 3651769
+@app.get("/all_fno_statistics")
+def get_all_fno_statistics():
     query = """
     select latest Close - 1 day ago Close / 1 day ago Close * 100 as '% Change',
            latest Close as 'Price',
@@ -119,4 +124,27 @@ def get_api2():
     GROUP BY symbol
     ORDER BY 4 desc
     """
-    return fetch_server_data(query.strip(), "response_api2", 3651769)
+    return fetch_server_data(query.strip(), "response_allfno", 3651769)
+
+# 3. /consolidation15d → Widget ID: 3656567
+@app.get("/consolidation15d")
+def get_consolidation15d():
+    query = """
+    select Latest Close - 1 day ago Close / 1 day ago Close * 100 as '% Change',
+           Latest Close as 'Price',
+           Monthly Sma( ( Monthly High - Monthly Open / Monthly Open * 100 ) , 12 ) * 0.01 * Weekly Max( 5 , Weekly High ) + Weekly Max( 5 , Weekly High ) as 'Sell Range 2',
+           Latest Rsi( 14 ) as 'Rsi',
+           Weekly Rsi( 14 ) as 'WRsi',
+           Latest Sma( Latest Rsi( 14 ) , 14 ) - Latest Rsi( 14 ) as 'Avg RSI Delta',
+           Latest Rsi( 14 ) - Latest Sma( Latest Rsi( 14 ) , 14 ) as 'Delta',
+           Weekly Min( 5 , Weekly Low ) as '5W low',
+           Weekly Max( 5 , Weekly High ) as '5W High',
+           Latest Close - 1 month ago Close * 100 / 1 month ago Close as 'This month',
+           Latest Close - 2 weeks ago Close * 100 / 2 weeks ago Close as '2W Gain',
+           Latest Close - 3 weeks ago Close * 100 / 3 weeks ago Close as '3W Gain',
+           Latest Close - 4 weeks ago Close * 100 / 4 weeks ago Close as '4W Gain'
+    WHERE( {33489} ( latest max( 10 , latest rsi( 14 ) ) < 60 and latest min( 10 , latest rsi( 14 ) ) > 40 ) )
+    GROUP BY symbol
+    ORDER BY 1 desc
+    """
+    return fetch_server_data(query.strip(), "response_consolidation15d", 3656567)
