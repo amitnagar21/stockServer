@@ -26,7 +26,8 @@ cache = {
     "response_indexstat": {"value": None, "timestamp": 0},
     "response_allfno": {"value": None, "timestamp": 0},
     "response_consolidation15d": {"value": None, "timestamp": 0},
-    "response_strong_mvmentum": {"value": None, "timestamp": 0}
+    "response_strong_mvmentum": {"value": None, "timestamp": 0},
+    "response_strong_downtrend": {"value": None, "timestamp": 0}
 }
 
 # Expiry Settings
@@ -175,3 +176,25 @@ def get_strong_mvmentum():
     ORDER BY 2 desc
     """
     return fetch_server_data(query.strip(), "response_strong_mvmentum", 3654496)
+
+@app.get("/strong_downtrend")
+def get_strong_downtrend():
+    query = """
+    select Market Cap as 'MCap',
+           latest Close - 1 day ago Close / 1 day ago Close * 100 as '% Change',
+           latest Close as 'Price',
+           Weekly Max( 52 , Weekly High ) as '52 high',
+           Yearly PE Ratio as 'PE',
+           latest Close - 10 days ago Close * 100 / 10 days ago Close as '2W Gain'
+    WHERE( {cash} (
+        latest rsi( 14 ) < 40 and
+        1 day ago rsi( 14 ) < 40 and
+        2 days ago rsi( 14 ) < 40 and
+        3 days ago rsi( 14 ) < 40 and
+        4 days ago rsi( 14 ) < 40 and
+        market cap > 5000
+    ) )
+    GROUP BY symbol
+    ORDER BY 2 desc
+    """
+    return fetch_server_data(query.strip(), "response_strong_downtrend", 3657355)
