@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from bs4 import BeautifulSoup
 import requests
 import time
+import openai
+import os
 
 app = FastAPI()
 
