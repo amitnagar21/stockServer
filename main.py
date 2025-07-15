@@ -209,9 +209,15 @@ async def ask_gpt(request: Request):
     body = await request.json()
     prompt = body.get("prompt")
 
+    # Set default prompt and default response
+    if not prompt or prompt.strip() == "":
+        return {
+            "response": "Nifty 50 is a major Indian stock market index. For a current view, consider reviewing recent market trends, sector performances, and global economic indicators."
+        }
+
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",  # or "gpt-3.5-turbo"
+            model="gpt-4",  # or gpt-3.5-turbo
             messages=[
                 {"role": "user", "content": prompt}
             ]
@@ -221,3 +227,4 @@ async def ask_gpt(request: Request):
         }
     except Exception as e:
         return {"error": str(e)}
+
