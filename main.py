@@ -4,12 +4,14 @@ from bs4 import BeautifulSoup
 import requests
 import time
 import openai
+from openai import OpenAI
 import os
 
 app = FastAPI()
 
 # Set your OpenAI API key
-openai.api_key = "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"  # <-- Replace with your API key
+
+client = OpenAI(api_key="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")
 
 # Enable CORS
 app.add_middleware(
@@ -206,21 +208,15 @@ def get_strong_downtrend():
 
 @app.get("/ask")
 async def ask_gpt(prompt: str = "What is the view on Nifty"):
-    # Use default prompt if none is provided
-    if not prompt or prompt.strip() == "":
-        return {
-            "response": "Nifty 50 is a major Indian stock market index. For a current view, consider reviewing recent market trends, sector performances, and global economic indicators."
-        }
-
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "user", "content": prompt}
             ]
         )
         return {
-            "response": response['choices'][0]['message']['content']
+            "response": response.choices[0].message.content
         }
     except Exception as e:
         return {"error": str(e)}
