@@ -204,12 +204,9 @@ def get_strong_downtrend():
     """
     return fetch_server_data(query.strip(), "response_strong_downtrend", 3657355)
 
-@app.post("/ask")
-async def ask_gpt(request: Request):
-    body = await request.json()
-    prompt = body.get("prompt")
-
-    # Set default prompt and default response
+@app.get("/ask")
+async def ask_gpt(prompt: str = "What is the view on Nifty"):
+    # Use default prompt if none is provided
     if not prompt or prompt.strip() == "":
         return {
             "response": "Nifty 50 is a major Indian stock market index. For a current view, consider reviewing recent market trends, sector performances, and global economic indicators."
@@ -217,7 +214,7 @@ async def ask_gpt(request: Request):
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",  # or gpt-3.5-turbo
+            model="gpt-4",
             messages=[
                 {"role": "user", "content": prompt}
             ]
