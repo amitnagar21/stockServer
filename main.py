@@ -3,15 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from bs4 import BeautifulSoup
 import requests
 import time
-import openai
-from openai import OpenAI
 import os
 
 app = FastAPI()
-
-# Set your OpenAI API key
-
-client = OpenAI(api_key="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")
 
 # Enable CORS
 app.add_middleware(
@@ -205,18 +199,5 @@ def get_strong_downtrend():
     """
     return fetch_server_data(query.strip(), "response_strong_downtrend", 3657355)
 
-@app.get("/ask")
-async def ask_gpt(prompt: str = "What is the view on Nifty"):
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return {
-            "response": response.choices[0].message.content
-        }
-    except Exception as e:
-        return {"error": str(e)}
+
 
