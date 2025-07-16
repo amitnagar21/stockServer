@@ -92,24 +92,23 @@ def fetch_server_data(query: str, cache_key: str, widget_id: int):
 @app.get("/indexstat")
 def get_indexstat():
     query = """
-    select latest Close as 'Ltp',
-           latest Close - latest Ema( latest Close , 200 ) as '200 EMA',
-           latest "close - 1 candle ago close / 1 candle ago close * 100" as '% chg',
-           1 month ago Close as 'MCose',
-           latest Close - 1 month ago Close * 100 / 1 month ago Close as 'This month',
-           latest Close - 2 weeks ago Close * 100 / 2 weeks ago Close as '2W Gain',
-           latest Close - 3 weeks ago Close * 100 / 3 weeks ago Close as '3W Gain',
-           latest Close - 4 weeks ago Close * 100 / 4 weeks ago Close as '4W Gain',
-           latest Rsi( 14 ) as 'RSI',
-           latest Sma( ( latest High - latest Low ) / latest Close * 100 , 15 ) * latest Close * 0.01 as 'Iv15P',
-           Monthly Sma( Monthly "close - 1 candle ago close / 1 candle ago close * 100" * Monthly count( 1, 1 where monthly "close - 1 candle ago close / 1 candle ago close * 100" < 0 ) , 18 ) as 'Average M fall',
-           2 weeks ago Sma( 2 weeks ago "close - 1 candle ago close / 1 candle ago close * 100" * 2 weeks ago count( 1, 1 where 2 weeks ago "close - 1 candle ago close / 1 candle ago close * 100" < 0 ) , 50 ) as 'Average fall',
-           2 weeks ago Sma( 2 weeks ago "close - 1 candle ago close / 1 candle ago close * 100" * 2 weeks ago count( 1, 1 where 2 weeks ago "close - 1 candle ago close / 1 candle ago close * 100" >= 0 ) , 50 ) as 'Average gain',
-           Monthly Sma( Monthly "close - 1 candle ago close / 1 candle ago close * 100" * Monthly count( 1, 1 where monthly "close - 1 candle ago close / 1 candle ago close * 100" >= 0 ) , 18 ) as 'Average M gain',
-           Weekly Sma( Weekly "close - 1 candle ago close / 1 candle ago close * 100" * Weekly count( 1, 1 where weekly "close - 1 candle ago close / 1 candle ago close * 100" >= 0 ) , 50 ) as 'Average W gain'
-    WHERE {45603} 1 = 1
+    SELECT   latestCLOSE                                                   as 'Ltp',
+        latest "close - 1 candle ago close / 1 candle ago close * 100" AS '% chg',
+        latestCLOSE - 2 weeks agoCLOSE * 100 / 2 weeks agoCLOSE     as '2W Gain',
+        latestCLOSE - 3 weeks agoCLOSE * 100 / 3 weeks agoCLOSE     as '3W Gain',
+        latestCLOSE - 4 weeks agoCLOSE * 100 / 4 weeks agoCLOSE     as '4W Gain',
+        latestCLOSE - 1 month agoCLOSE * 100 / 1 month agoCLOSE     as 'This month',
+        latestCLOSE - 10 weeks agoCLOSE * 100 / 10 weeks agoCLOSE   as '10W Gain',
+        latestCLOSE - 3 months agoCLOSE * 100 / 3 months agoCLOSE   as '3M Gain',
+        latestCLOSE - 6 months agoCLOSE * 100 / 6 months agoCLOSE   as '6M Gain',
+        latestCLOSE - 1 quarter agoCLOSE * 100 / 1 quarter agoCLOSE as '1Q Gain',
+        latestCLOSE - 3 quarter agoCLOSE * 100 / 3 quarter agoCLOSE as '3Q Gain',
+        latestCLOSE - 1 year agoCLOSE * 100 / 1 year agoCLOSE       as '1Y Gain',
+        latestCLOSE - 2 years agoCLOSE * 100 / 2 years agoCLOSE     as '2Y Gain',
+        latestCLOSE - 5 years agoCLOSE * 100 / 5 years agoCLOSE     as '5Y Gain'
+    WHERE    {45603} 1 = 1
     GROUP BY symbol
-    ORDER BY 3 desc
+    ORDER BY 2 DESC
     """
     return fetch_server_data(query.strip(), "response_indexstat", 3656538)
 
