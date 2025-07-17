@@ -2,4 +2,4 @@ fastapi
 uvicorn[standard]
 beautifulsoup4
 requests
-openai
+apscheduler
