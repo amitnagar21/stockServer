@@ -51,36 +51,47 @@ def get_csrf_token():
     return token
 
 # Fetch data from Chartink server
+
 def fetch_server_data(query: str, cache_key: str, widget_id: int):
     now = time.time()
     if cache[cache_key]["value"] and now - cache[cache_key]["timestamp"] < RESPONSE_EXPIRY:
         print(f"Using cached response for {cache_key}")
         return cache[cache_key]["value"]
 
-    token = get_csrf_token()
-    headers = {
-        "X-CSRF-TOKEN": token,
-        "X-Requested-With": "XMLHttpRequest",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Referer": "https://chartink.com/dashboard/347360"
-    }
+    for attempt in range(2):  # Try twice: initial and retry
+        token = get_csrf_token()
+        headers = {
+            "X-CSRF-TOKEN": token,
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Referer": "https://chartink.com/dashboard/347360"
+        }
 
-    payload = {
-        "query": query,
-        "limit": 1000,
-        "use_live": 1,
-        "size": 1,
-        "widget_id": widget_id
-    }
+        payload = {
+            "query": query,
+            "limit": 1000,
+            "use_live": 1,
+            "size": 1,
+            "widget_id": widget_id
+        }
 
-    response = session.post(widget_url, data=payload, headers=headers)
-    data = response.json()
+        try:
+            response = session.post(widget_url, data=payload, headers=headers)
+            if response.status_code == 419 or "csrf" in response.text.lower():
+                print("CSRF token mismatch. Retrying with a new token...")
+                cache["csrf_token"]["value"] = None  # Invalidate token
+                continue  # Retry
 
-    cache[cache_key]["value"] = data
-    cache[cache_key]["timestamp"] = now
-    print(f"Fetched fresh response for {cache_key}")
-    return data
+            data = response.json()
+            cache[cache_key]["value"] = data
+            cache[cache_key]["timestamp"] = now
+            print(f"Fetched fresh response for {cache_key}")
+            return data
 
+        except Exception as e:
+            print(f"Error fetching data (attempt {attempt+1}): {e}")
+
+    raise Exception("Failed to fetch data after retrying with CSRF token.")
 # ------------------ API ENDPOINTS ------------------
 
 @app.get("/indexstat")
