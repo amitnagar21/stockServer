@@ -29,6 +29,7 @@ cache = {
     "response_consolidation15d": {"value": None, "timestamp": 0},
     "response_strong_mvmentum": {"value": None, "timestamp": 0},
     "response_strong_downtrend": {"value": None, "timestamp": 0},
+    "response_up5hr": {"value": None, "timestamp": 0},
     "response_upsince5d": {"value": None, "timestamp": 0}
 }
 
@@ -235,5 +236,27 @@ def get_upsince5d():
     """
     return fetch_server_data(query.strip(), "response_upsince5d", 3652667)
 
+@app.get("/up5hr")
+def get_up5hr():
+    query = """
+    select Market Cap as 'MCap',
+           latest Close - 1 day ago Close / 1 day ago Close * 100 as '% Change',
+           latest Close as 'Price',
+           latest Close - 5 days ago Close * 100 / 5 days ago Close as '5D Gain',
+           latest Close - 4 weeks ago Close * 100 / 4 weeks ago Close as '4W Gain',
+           latest Close - 1 month ago Close * 100 / 1 month ago Close as 'This month',
+           Weekly Rsi( 14 ) as 'WRsi',
+           TTM PE as 'PE'
+    WHERE( {cash} (
+        [0] 1 hour rsi( 14 ) > [-1] 1 hour rsi( 14 ) and
+        [-1] 1 hour rsi( 14 ) > [-2] 1 hour rsi( 14 ) and
+        [-2] 1 hour rsi( 14 ) > [-3] 1 hour rsi( 14 ) and
+        [-3] 1 hour rsi( 14 ) > [-4] 1 hour rsi( 14 ) and
+        market cap > 5000
+    ) )
+    GROUP BY symbol
+    ORDER BY 4 desc
+    """
+    return fetch_server_data(query.strip(), "response_up5hr", 3672568)
 
 
