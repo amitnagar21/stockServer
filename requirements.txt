@@ -3,3 +3,4 @@ uvicorn[standard]
 beautifulsoup4
 requests
 apscheduler
+pytz
