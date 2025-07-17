@@ -4,6 +4,9 @@ from bs4 import BeautifulSoup
 import requests
 import time
 import os
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime, time
+import pytz
 
 app = FastAPI()
 
@@ -260,3 +263,28 @@ def get_up5hr():
     return fetch_server_data(query.strip(), "response_up5hr", 3672568)
 
 
+# Set Indian timezone
+IST = pytz.timezone('Asia/Kolkata')
+
+def warm_cache():
+    now = datetime.now(IST).time()
+    start_time = time(9, 0)   # 9:00 AM
+    end_time = time(16, 0)    # 4:00 PM
+
+    if start_time <= now <= end_time:
+        print(f"[{datetime.now(IST)}] Warming up cache...")
+        try:
+            fetch_server_data(indexstat_query, "indexstat", 3656567)
+            fetch_server_data(all_fno_statistics_query, "all_fno_statistics", 3654601)
+            fetch_server_data(consolidation15d_query, "consolidation15d", 3656567)
+            fetch_server_data(strong_mvmentum_query, "strong_mvmentum", 3654496)
+            fetch_server_data(strong_downtrend_query, "strong_downtrend", 3657355)
+        except Exception as e:
+            print(f"[{datetime.now(IST)}] Cache warming error: {e}")
+    else:
+        print(f"[{datetime.now(IST)}] Outside cache warming hours")
+
+# Scheduler setup
+scheduler = BackgroundScheduler(timezone=IST)
+scheduler.add_job(warm_cache, 'interval', minutes=5)
+scheduler.start()
