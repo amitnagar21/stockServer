@@ -28,7 +28,8 @@ cache = {
     "response_allfno": {"value": None, "timestamp": 0},
     "response_consolidation15d": {"value": None, "timestamp": 0},
     "response_strong_mvmentum": {"value": None, "timestamp": 0},
-    "response_strong_downtrend": {"value": None, "timestamp": 0}
+    "response_strong_downtrend": {"value": None, "timestamp": 0},
+    "response_upsince5d": {"value": None, "timestamp": 0}
 }
 
 # Expiry Settings
