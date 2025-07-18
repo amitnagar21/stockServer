@@ -34,6 +34,7 @@ cache = {
     "response_down5d": {"value": None, "timestamp": 0},
     "response_down5hr": {"value": None, "timestamp": 0},
     "response_advdec30d": {"value": None, "timestamp": 0},
+    "response_advdec15d": {"value": None, "timestamp": 0},
     "response_upsince5d": {"value": None, "timestamp": 0}
 }
 
@@ -320,3 +321,14 @@ def get_advdec30d():
     ORDER BY 1 desc
     """
     return fetch_server_data(query.strip(), "response_advdec30d", 3673278)
+
+
+@app.get("/advdec15d")
+def get_advdec15d():
+    query = """
+    select groupcount( {cash} 1 where [0] 5 minute close > 15 days ago close ) as 'Advancing',
+           groupcount( {cash} 1 where [0] 5 minute close < 15 days ago close ) as 'Declining'
+    WHERE {cash} 1 = 1
+    ORDER BY 1 desc
+    """
+    return fetch_server_data(query.strip(), "response_advdec15d", 3673277)
