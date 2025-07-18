@@ -35,6 +35,7 @@ cache = {
     "response_down5hr": {"value": None, "timestamp": 0},
     "response_advdec30d": {"value": None, "timestamp": 0},
     "response_advdec15d": {"value": None, "timestamp": 0},
+    "response_idxvolatality": {"value": None, "timestamp": 0},
     "response_upsince5d": {"value": None, "timestamp": 0}
 }
 
@@ -332,3 +333,34 @@ def get_advdec15d():
     ORDER BY 1 desc
     """
     return fetch_server_data(query.strip(), "response_advdec15d", 3673277)
+
+@app.get("/idxvolatality")
+def get_idxvolatality():
+    query = """
+    select latest Close as 'Ltp',
+           latest "close - 1 candle ago close / 1 candle ago close * 100" as '% chg',
+           latest Sma( ( latest High - latest Low ) / latest Close * 100 , 15 ) * latest Close * 0.01 as 'Iv15P',
+           ( latest Sma( ( latest Open - latest Low / latest Open * 100 ) , 10 ) * latest Close * 0.01 ) +
+           ( latest Sma( ( latest High - latest Open / latest Open * 100 ) , 10 ) * latest Close * 0.01 ) as '10 D range',
+           ( latest Sma( ( latest Open - latest Low / latest Open * 100 ) , 30 ) * latest Close * 0.01 ) +
+           ( latest Sma( ( latest High - latest Open / latest Open * 100 ) , 30 ) * latest Close * 0.01 ) as '30 D range',
+           ( latest Sma( ( latest Open - latest Low / latest Open * 100 ) , 60 ) * latest Close * 0.01 ) +
+           ( latest Sma( ( latest High - latest Open / latest Open * 100 ) , 60 ) * latest Close * 0.01 ) as '60 D range',
+           ( latest Sma( ( latest Open - latest Low / latest Open * 100 ) , 252 ) * latest Close * 0.01 ) +
+           ( latest Sma( ( latest High - latest Open / latest Open * 100 ) , 252 ) * latest Close * 0.01 ) as '252D range',
+           Monthly Sma( Monthly "close - 1 candle ago close / 1 candle ago close * 100" *
+                       Monthly count( 1, 1 where monthly "close - 1 candle ago close / 1 candle ago close * 100" >= 0 ), 24 ) as 'Average M gain',
+           Monthly Sma( Monthly "close - 1 candle ago close / 1 candle ago close * 100" *
+                       Monthly count( 1, 1 where monthly "close - 1 candle ago close / 1 candle ago close * 100" < 0 ), 24 ) as 'Average M fall',
+           Weekly Sma( Weekly "close - 1 candle ago close / 1 candle ago close * 100" *
+                       Weekly count( 1, 1 where weekly "close - 1 candle ago close / 1 candle ago close * 100" >= 0 ), 50 ) as 'Average W gain',
+           Weekly Sma( Weekly "close - 1 candle ago close / 1 candle ago close * 100" *
+                       Weekly count( 1, 1 where weekly "close - 1 candle ago close / 1 candle ago close * 100" < 0 ), 50 ) as 'Average W Fall',
+           latest Close - 1 month ago Close * 100 / 1 month ago Close as 'This month',
+           Monthly Min( 24 , Monthly "close - 1 candle ago close / 1 candle ago close * 100" ) as 'Max fall',
+           Monthly Max( 24 , Monthly "close - 1 candle ago close / 1 candle ago close * 100" ) as 'Max gain'
+    WHERE {45603} 1 = 1
+    GROUP BY symbol
+    ORDER BY 2 desc
+    """
+    return fetch_server_data(query.strip(), "response_idxvolatality", 3669014)
