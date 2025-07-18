@@ -32,6 +32,7 @@ cache = {
     "response_strong_downtrend": {"value": None, "timestamp": 0},
     "response_up5hr": {"value": None, "timestamp": 0},
     "response_down5d": {"value": None, "timestamp": 0},
+    "response_down5hr": {"value": None, "timestamp": 0},
     "response_upsince5d": {"value": None, "timestamp": 0}
 }
 
@@ -285,3 +286,26 @@ def get_down5d():
     """
     return fetch_server_data(query.strip(), "response_down5d", 3652658)
 
+@app.get("/down5hr")
+def get_down5hr():
+    query = """
+    select latest Close - 1 day ago Close / 1 day ago Close * 100 as '% Change',
+           latest Close as 'Price',
+           TTM PE as 'PE',
+           latest Close - 1 month ago Close * 100 / 1 month ago Close as 'M',
+           latest Min( 20 , latest Low ) as '4W l',
+           latest Max( 20 , latest Close ) as '4W h',
+           latest Close - 4 weeks ago Close * 100 / 4 weeks ago Close as '4Week Gain',
+           latest Close - 5 days ago Close * 100 / 5 days ago Close as '5D Gain/Loss',
+           latest Rsi( 14 ) as 'RSI',
+           Weekly Rsi( 14 ) as 'WRsi'
+    WHERE( {33489} (
+        [0] 1 hour rsi( 14 ) < [-1] 1 hour rsi( 14 ) and
+        [-1] 1 hour rsi( 14 ) < [-2] 1 hour rsi( 14 ) and
+        [-2] 1 hour rsi( 14 ) < [-3] 1 hour rsi( 14 ) and
+        [-3] 1 hour rsi( 14 ) < [-4] 1 hour rsi( 14 )
+    ) )
+    GROUP BY symbol
+    ORDER BY 10 desc
+    """
+    return fetch_server_data(query.strip(), "response_down5hr", 3673245)
