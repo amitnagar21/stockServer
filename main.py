@@ -36,6 +36,7 @@ cache = {
     "response_advdec30d": {"value": None, "timestamp": 0},
     "response_advdec15d": {"value": None, "timestamp": 0},
     "response_idxvolatality": {"value": None, "timestamp": 0},
+    "response_smallcapup5d": {"value": None, "timestamp": 0},
     "response_upsince5d": {"value": None, "timestamp": 0}
 }
 
@@ -364,3 +365,29 @@ def get_idxvolatality():
     ORDER BY 2 desc
     """
     return fetch_server_data(query.strip(), "response_idxvolatality", 3669014)
+
+@app.get("/smallcapup5d")
+def get_smallcapup5d():
+    query = """
+    select Market Cap as 'MCap',
+           latest Close - 1 day ago Close / 1 day ago Close * 100 as '% Change',
+           latest Close as 'Price',
+           latest Close - 5 days ago Close * 100 / 5 days ago Close as '5D Gain',
+           latest Close - 4 weeks ago Close * 100 / 4 weeks ago Close as '4W Gain',
+           latest Close - 1 month ago Close * 100 / 1 month ago Close as 'This month',
+           Weekly Rsi( 14 ) as 'WRsi',
+           TTM PE as 'PE'
+    WHERE (
+        {cash} (
+            1 day ago rsi( 14 ) > 2 days ago rsi( 14 ) and
+            2 days ago rsi( 14 ) > 3 days ago rsi( 14 ) and
+            3 days ago rsi( 14 ) > 4 days ago rsi( 14 ) and
+            4 days ago rsi( 14 ) > 5 days ago rsi( 14 ) and
+            latest close = latest max( 20 , latest close ) * 1 and
+            market cap < 5000
+        )
+    )
+    GROUP BY symbol
+    ORDER BY 4 desc
+    """
+    return fetch_server_data(query.strip(), "response_smallcapup5d", 3675404)
