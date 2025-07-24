@@ -42,7 +42,7 @@ cache = {
 
 # Expiry Settings
 TOKEN_EXPIRY = 86400      # 24 hours
-RESPONSE_EXPIRY = 300     # 5 minutes
+RESPONSE_EXPIRY = 15     # 5 minutes
 
 # Get or refresh CSRF token
 def get_csrf_token():
